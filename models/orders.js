@@ -34,6 +34,7 @@ const OrderSchema = new mongoose.Schema(
     discountamount: { type: Number, min: 0 },
     finalprice: { type: Number, min: 0 },
     paymentId: { type: String },
+    topicId: { type: String },
   },
   { timestamps: true }
 );

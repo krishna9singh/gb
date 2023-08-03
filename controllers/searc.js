@@ -100,9 +100,9 @@ exports.searchpros = async (req, res) => {
         );
         dps.push(a);
       }
-      res.status(200).json({ data: { pros, dps } });
+      res.status(200).json({ data: { pros, dps, success: true } });
     }
   } catch (e) {
-    res.status(400).json(e.message);
+    res.status(400).json({ message: e.message, success: false });
   }
 };

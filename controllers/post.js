@@ -169,6 +169,7 @@ exports.fetchfeed = async (req, res) => {
   try {
     const { userId } = req.params;
     const user = await User.findById(userId);
+
     const post = await Post.aggregate([
       { $match: { tags: { $in: user.interest } } },
       { $sample: { size: 50 } },
@@ -252,6 +253,7 @@ exports.fetchfeed = async (req, res) => {
         },
       },
     ]);
+
     const liked = [];
     for (let i = 0; i < post.length; i++) {
       if (
@@ -274,7 +276,7 @@ exports.fetchfeed = async (req, res) => {
     }
 
     if (!post) {
-      res.status(201).json({ message: "No post found" });
+      res.status(201).json({ message: "No post found", success: false });
     } else {
       const dps = [];
       for (let i = 0; i < post.length; i++) {
@@ -319,7 +321,7 @@ exports.fetchfeed = async (req, res) => {
       });
     }
   } catch (err) {
-    res.status(500).json({ message: err });
+    res.status(500).json({ message: err, success: false });
   }
 };
 
@@ -488,7 +490,9 @@ exports.joinedcom = async (req, res) => {
   try {
     const community = await Community.find({
       members: { $in: user._id },
-    }).populate("members", "profilepic");
+    })
+      .populate("members", "profilepic")
+      .populate("creator", "fullname");
     if (!community) {
       res.status(404).json({ message: "No community found", success: false });
     } else {
@@ -502,7 +506,7 @@ exports.joinedcom = async (req, res) => {
       for (let i = 0; i < community.length; i++) {
         const post = await Post.find({
           community: community[i]._id,
-          createdAt: { $gte: time },
+          // createdAt: { $gte: time },
         })
           .populate("sender", "fullname")
           .sort({ createdAt: -1 })
@@ -622,6 +626,11 @@ exports.likepost = async (req, res) => {
       await User.updateOne(
         { _id: userId },
         { $push: { likedposts: post._id } }
+      );
+      console.log(
+        user._id.toString() !== post.sender._id.toString(),
+        user._id.toString(),
+        post.sender._id.toString()
       );
       if (user._id.toString() !== post.sender._id.toString()) {
         const not = new Notification({

@@ -7,6 +7,7 @@ const stripe = require("stripe")(
   "sk_test_51NAGrZSEXlKwVDBNhya5wiyCmbRILf14f1Bk2uro1IMurrItZFsnmn7WNA0I5Q3RMnCVui1ox5v9ynOg3CGrFkHu00hLvIqqS1"
 );
 const Cart = require("../models/Cart");
+const Subscription = require("../models/Subscriptions");
 
 const minioClient = new Minio.Client({
   endPoint: "minio.grovyo.site",
@@ -64,19 +65,21 @@ exports.create = async (req, res) => {
 
 exports.createtopicorder = async (req, res) => {
   const { id, topicId } = req.params;
+
   try {
     const user = await User.findById(id);
     const topic = await Topic.findById(topicId);
     if (user && topic) {
       if (!topic.members.includes(user._id)) {
-        const pi = await stripe.paymentIntents.create({
-          amount: req.body.topicprice * 100,
-          currency: "INR",
-          automatic_payment_methods: {
-            enabled: true,
-          },
+        const subs = new Subscription({
+          topic: topicId,
+          orderId: Math.floor(Math.random() * 9000000) + 1000000,
+          validity: "1 Month",
+          status: "pending",
         });
-        res.status(200).json({ success: true, sec: pi.client_secret });
+        await subs.save();
+
+        res.status(200).json({ success: true, orderId: subs._id });
       }
     } else {
       res.status(404).json({ message: e.message, success: false });
@@ -87,7 +90,8 @@ exports.createtopicorder = async (req, res) => {
 };
 
 exports.updateorder = async (req, res) => {
-  const { id, topicId } = req.params;
+  const { id, topicId, orderId } = req.params;
+  const { success, paymentId, paymentMode } = req.body;
   try {
     const user = await User.findById(id);
     const topic = await Topic.findById(topicId);
@@ -100,6 +104,16 @@ exports.updateorder = async (req, res) => {
         await Topic.updateOne(
           { _id: topic._id },
           { $push: { members: user._id }, $inc: { memberscount: 1 } }
+        );
+        await Subscription.updateOne(
+          { _id: orderId },
+          {
+            $set: {
+              status: success,
+              paymentId: paymentId,
+              paymentMode: paymentMode,
+            },
+          }
         );
         res.status(200).json({ success: true });
       }
@@ -154,7 +168,7 @@ exports.details = async (req, res) => {
 
 exports.createcartorder = async (req, res) => {
   const { userId } = req.params;
-  const { quantity, taxes, deliverycharges, productId, total } = req.body;
+  const { quantity, deliverycharges, productId, total } = req.body;
 
   try {
     const user = await User.findById(userId);
@@ -167,7 +181,7 @@ exports.createcartorder = async (req, res) => {
         quantity: quantity,
         total: total,
         orderId: Math.floor(Math.random() * 9000000) + 1000000,
-        taxes: taxes,
+
         deliverycharges: deliverycharges,
       });
       await order.save();
@@ -202,7 +216,9 @@ exports.updatecartorder = async (req, res) => {
           },
         }
       );
-      await User.updateOne({ _id: user._id }, { $unset: { cart: [] } });
+      if (success) {
+        await User.updateOne({ _id: user._id }, { $unset: { cart: [] } });
+      }
       await res.status(200).json({ success: true });
     }
   } catch (e) {

@@ -9,7 +9,7 @@ const uuid = require("uuid").v4;
 const multer = require("multer");
 
 const minioClient = new Minio.Client({
-  endPoint: "192.168.1.108",
+  endPoint: "192.168.29.171",
   port: 9000,
   useSSL: false,
   accessKey: "shreyansh379",
@@ -38,26 +38,24 @@ router.post("/newmessage", async (req, res) => {
   const m = new Message(req.body);
   try {
     const newM = await m.save();
-    res.status(200).json(newM);
+    res.status(200).json({ newM, success: true });
   } catch (e) {
     res.status(500).json({ message: e.message, success: false });
   }
 });
 
-router.post("/sendimage/:id", upload.single("image"), async (req, res) => {
+router.post("/sendimage/:id", upload.single("content"), async (req, res) => {
   const { id } = req.params;
   const { mesId, text, sender, conversationId, typ } = req.body;
-  const image = req.file;
+  const content = req.file;
   try {
     const user = await User.findById(id);
     if (user) {
       const uuidString = uuid();
       const bucketName = "messages";
-      const objectName = `${Date.now()}_${uuidString}_${image.originalname}`;
-      a1 = objectName;
-      a2 = image.mimetype;
+      const objectName = `${Date.now()}_${uuidString}_${content.originalname}`;
       const m = new Message({
-        image: objectName,
+        content: objectName,
         mesId: mesId,
         text: text,
         sender: sender,
@@ -65,7 +63,8 @@ router.post("/sendimage/:id", upload.single("image"), async (req, res) => {
         typ: typ,
       });
       const newM = await m.save();
-      await sharp(image.buffer)
+
+      await sharp(req.file.buffer)
         .jpeg({ quality: 50 })
         .toBuffer()
         .then(async (data) => {
@@ -74,7 +73,7 @@ router.post("/sendimage/:id", upload.single("image"), async (req, res) => {
         .catch((err) => {
           console.log(err.message, "-error");
         });
-      res.status(200).json(newM);
+      res.status(200).json({ newM, success: false });
     } else {
       res.status(404).json({ message: "User not found", success: false });
     }
@@ -83,21 +82,20 @@ router.post("/sendimage/:id", upload.single("image"), async (req, res) => {
   }
 });
 
-router.post("/sendvideo/:id", upload.single("video"), async (req, res) => {
+router.post("/sendvideo/:id", upload.single("content"), async (req, res) => {
   const { id } = req.params;
   const { mesId, text, sender, conversationId, typ } = req.body;
-  const video = req.file;
+  const content = req.file;
   try {
     const user = await User.findById(id);
     if (user) {
       const uuidString = uuid();
       const bucketName = "messages";
-      const objectName = `${Date.now()}_${uuidString}_${video.originalname}`;
-      const size = video.buffer.byteLength;
-      a1 = objectName;
-      a2 = video.mimetype;
+      const objectName = `${Date.now()}_${uuidString}_${content.originalname}`;
+      const size = content.buffer.byteLength;
+
       const m = new Message({
-        video: objectName,
+        content: objectName,
         mesId: mesId,
         text: text,
         sender: sender,
@@ -109,12 +107,12 @@ router.post("/sendvideo/:id", upload.single("video"), async (req, res) => {
       await minioClient.putObject(
         bucketName,
         objectName,
-        video.buffer,
+        content.buffer,
         size,
-        video.mimetype
+        content.mimetype
       );
 
-      res.status(200).json(newM);
+      res.status(200).json({ newM, success: true });
     } else {
       res.status(404).json({ message: "User not found", success: false });
     }

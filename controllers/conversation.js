@@ -49,17 +49,17 @@ exports.newconv = async (req, res) => {
 
 //check if conversation exists
 exports.convexists = async (req, res) => {
-  const conv = await Conversation.findOne({
-    members: { $all: [req.body.first, req.body.second] },
-  });
   try {
+    const conv = await Conversation.findOne({
+      members: { $all: [req.body.first, req.body.second] },
+    });
     if (conv) {
       res.status(200).json({ success: true, covId: conv._id });
     } else {
       res.status(203).json({ success: false });
     }
   } catch (e) {
-    res.status(500).json(e.message);
+    res.status(500).json({ message: e.message, success: false });
   }
 };
 
@@ -111,41 +111,42 @@ exports.getallconv = async (req, res) => {
 };
 
 exports.getoneconv = async (req, res) => {
-  const { convId } = req.params;
+  const { convId, id } = req.params;
   const time = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
   try {
     const conv = await Message.find({
       conversationId: convId,
-      hidden: { $size: 0 },
+      hidden: { $nin: [id] },
+
       $or: [
         { dissapear: false },
         { createdAt: { $gt: time }, dissapear: true },
       ],
     })
-      .limit(10)
+      .limit(30)
       .sort({ createdAt: -1 });
 
     let content = [];
     for (let i = 0; i < conv.length; i++) {
-      if (conv[i].image) {
+      if (conv[i].content) {
         const a = await generatePresignedUrl(
           "messages",
-          conv[i].image.toString(),
+          conv[i].content.toString(),
           60 * 60
         );
         content.push(a);
-      } else if (conv[i].video) {
+      } else if (conv[i].content) {
         const a = await generatePresignedUrl(
           "messages",
-          conv[i].video.toString(),
+          conv[i].content.toString(),
           60 * 60
         );
         content.push(a);
-      } else if (conv[i].audio) {
+      } else if (conv[i].content) {
         const a = await generatePresignedUrl(
           "messages",
-          conv[i].audio.toString(),
+          conv[i].content.toString(),
           60 * 60
         );
         content.push(a);
@@ -157,12 +158,14 @@ exports.getoneconv = async (req, res) => {
     const reversedConv = conv.reverse();
     const reversedCont = content.reverse();
     if (!conv) {
-      res.status(404).json({ message: "Conversation not found" });
+      res
+        .status(404)
+        .json({ message: "Conversation not found", success: false });
     } else {
-      res.status(200).json({ reversedConv, reversedCont });
+      res.status(200).json({ reversedConv, reversedCont, success: true });
     }
   } catch (e) {
-    res.status(400).json(e.message);
+    res.status(400).json({ message: e.message, success: false });
   }
 };
 

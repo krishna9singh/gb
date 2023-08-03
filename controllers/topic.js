@@ -139,39 +139,66 @@ exports.getmessages = async (req, res) => {
         message: "You are not the member of the Community",
         success: true,
         issubs: false,
+        topicjoined: false,
       });
     } else if (topic.type === "Private") {
-      if (!topic.members.includes(user._id)) {
+      if (topic.members.some((id) => id.toString() === user._id.toString())) {
+        res.status(200).json({
+          success: true,
+          reversed,
+          dps,
+          issubs: true,
+          topicjoined: true,
+        });
+      } else {
         res.status(400).json({
           message: "You need to join this topic first",
           success: true,
           issubs: false,
           reversed,
           dps,
+          topicjoined: false,
         });
-      } else {
-        res.status(200).json({ success: true, reversed, dps, issubs: true });
       }
     } else if (topic.type === "Paid") {
       if (
-        !topic.members.includes(user._id) &&
-        !user.topicsjoined.includes(topic._id)
+        topic.members.some((id) => id.toString() === user._id.toString()) &&
+        user.topicsjoined.some((id) => id.toString() === topic._id.toString())
       ) {
-        res.status(400).json({
+        res.status(200).json({
+          success: true,
+          reversed,
+          dps,
+          issubs: true,
+          topicjoined: true,
+        });
+      } else {
+        res.status(203).json({
           message: "Unsubscribed",
           reversed,
           dps,
           success: true,
           topic,
-          issubs: false,
+          issubs: true,
+          topicjoined: false,
         });
-      } else {
-        res.status(200).json({ success: true, reversed, dps, issubs: true });
       }
     } else if (topic.type === "Public") {
-      res.status(200).json({ success: true, reversed, dps, issubs: true });
+      res.status(200).json({
+        success: true,
+        reversed,
+        dps,
+        issubs: true,
+        topicjoined: true,
+      });
     } else {
-      res.status(200).json({ success: true, reversed, dps, issubs: true });
+      res.status(200).json({
+        success: true,
+        reversed,
+        dps,
+        issubs: true,
+        topicjoined: true,
+      });
     }
   } catch (e) {
     res.status(400).json({ message: e.message });
@@ -189,14 +216,14 @@ exports.hiddenmes = async (req, res) => {
         comId: com._id,
         hidden: { $in: [user._id] },
       }).populate("sender", "fullname isverified profilepic");
-      res.status(200).json({ mes });
+      res.status(200).json({ mes, success: true });
     } else {
       res
         .status(404)
         .json({ message: "Something went wrong...", success: false });
     }
   } catch (e) {
-    res.status(400).json({ message: e.message });
+    res.status(400).json({ message: e.message, success: false });
   }
 };
 

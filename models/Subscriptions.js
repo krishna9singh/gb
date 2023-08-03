@@ -8,6 +8,7 @@ const SubscrpitionsSchema = new mongoose.Schema(
     paymentId: { type: String },
     status: { type: String },
     orderId: { type: String },
+    paymentMode: { type: String },
   },
   { timestamps: true }
 );

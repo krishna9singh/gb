@@ -15,7 +15,7 @@ router.post("/newconv", newconv);
 router.get("/getconv/:userId", getallconv);
 
 //get a conversation
-router.get("/getoneconv/:convId", getoneconv);
+router.get("/getoneconv/:convId/:id", getoneconv);
 
 //check a conversation if it exists
 router.post("/checkconv", convexists);

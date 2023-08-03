@@ -34,7 +34,7 @@ exports.create = async (req, res) => {
   const image = req.file;
   const uuidString = uuid();
   if (!image) {
-    res.status(400).json({ message: "Please upload an image" });
+    res.status(400).json({ message: "Please upload an image", success: false });
   } else if (topic) {
     try {
       const user = await User.findById(userId);
@@ -117,9 +117,9 @@ exports.create = async (req, res) => {
           $inc: { totaltopics: 3, totalcom: 1 },
         }
       );
-      res.status(200).json(savedcom);
+      res.status(200).json({ community: savedcom, success: true });
     } catch (e) {
-      res.status(400).json(e.message);
+      res.status(400).json({ message: e.message, success: false });
     }
   } else {
     try {
@@ -185,9 +185,9 @@ exports.create = async (req, res) => {
           $inc: { totaltopics: 2, totalcom: 1 },
         }
       );
-      res.status(200).json(savedcom);
+      res.status(200).json({ community: savedcom, success: true });
     } catch (e) {
-      res.status(400).json(e.message);
+      res.status(400).json({ message: e.message, success: false });
     }
   }
 };

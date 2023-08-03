@@ -101,15 +101,17 @@ exports.signupmobile = async (req, res) => {
         user,
         userexists: true,
         a,
+        success: true,
       });
     } else if (!user) {
       res.status(200).json({
         message: "signup via mobile success",
         userexists: false,
+        success: true,
       });
     }
   } catch (e) {
-    res.status(400).json({ message: e.message });
+    res.status(400).json({ message: e.message, success: false });
   }
 };
 
@@ -347,7 +349,8 @@ exports.checkusername = async (req, res) => {
 };
 
 exports.createnewaccount = async (req, res) => {
-  const { fullname, gender, username, number, bio, image, interest } = req.body;
+  const { fullname, gender, username, number, bio, image, interest, dob } =
+    req.body;
   const uuidString = uuid();
   const image1 = req.file;
 
@@ -366,6 +369,7 @@ exports.createnewaccount = async (req, res) => {
         desc: bio,
         interest: individualInterests,
         gender: gender,
+        DOB: dob,
       });
       await user.save();
 
@@ -413,6 +417,7 @@ exports.createnewaccount = async (req, res) => {
         desc: bio,
         interest: individualInterests,
         gender: gender,
+        DOB: dob,
       });
       await user.save();
       let pic = await generatePresignedUrl(
