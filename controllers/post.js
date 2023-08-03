@@ -627,11 +627,7 @@ exports.likepost = async (req, res) => {
         { _id: userId },
         { $push: { likedposts: post._id } }
       );
-      console.log(
-        user._id.toString() !== post.sender._id.toString(),
-        user._id.toString(),
-        post.sender._id.toString()
-      );
+
       if (user._id.toString() !== post.sender._id.toString()) {
         const not = new Notification({
           senderId: user._id,

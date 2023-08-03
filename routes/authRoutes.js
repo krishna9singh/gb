@@ -18,6 +18,7 @@ const {
   returnuser,
   checkusername,
   createnewaccount,
+  createnew,
 } = require("../controllers/userAuth");
 const { userbyId } = require("../controllers/user");
 
@@ -31,6 +32,7 @@ router.get("/signout", signout);
 router.get("/getdetails/:id", returnuser);
 router.post("/checkusername", checkusername);
 router.post("/v1/createnewaccount", upload.single("image"), createnewaccount);
+router.post("/v1/createnew", upload.single("image"), createnew);
 
 router.post("/filldetailsemail/:userId", upload.single("image"), filldetails);
 

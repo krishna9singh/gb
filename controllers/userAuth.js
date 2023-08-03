@@ -349,23 +349,23 @@ exports.checkusername = async (req, res) => {
 };
 
 exports.createnewaccount = async (req, res) => {
-  const { fullname, gender, username, number, bio, image, interest, dob } =
+  const { fullname, gender, username, number, bio, image1, interest, dob } =
     req.body;
   const uuidString = uuid();
-  const image1 = req.file;
+  const image = req.file;
 
   const interestsArray = [interest];
   const interestsString = interestsArray[0];
-
+  console.log(req.body, req.file);
   const individualInterests = interestsString.split(",");
 
-  if (image === "male-1.png" || image === "female-1.png") {
+  if (image1 === "male-1.png" || image1 === "female-1.png") {
     try {
       const user = new User({
         fullname: fullname,
         username: username,
         phone: number,
-        profilepic: image,
+        profilepic: image1,
         desc: bio,
         interest: individualInterests,
         gender: gender,
@@ -395,11 +395,8 @@ exports.createnewaccount = async (req, res) => {
   } else {
     try {
       const bucketName = "images";
-      const objectName = `${Date.now()}_${uuidString}_${image1.originalname}`;
-      a1 = objectName;
-      a2 = image1.mimetype;
-
-      await sharp(image1.buffer)
+      const objectName = `${Date.now()}_${uuidString}_${image.originalname}`;
+      await sharp(image.buffer)
         .jpeg({ quality: 50 })
         .toBuffer()
         .then(async (data) => {
@@ -441,6 +438,76 @@ exports.createnewaccount = async (req, res) => {
     }
   }
 };
-{
-  /* */
-}
+
+exports.createnew = async (req, res) => {
+  const { fullname, gender, username, number, bio, image1, interest, dob } =
+    req.body;
+  const uuidString = uuid();
+  const interestsArray = [interest];
+  const interestsString = interestsArray[0];
+  console.log(req.body, req.file);
+  const individualInterests = interestsString.split(",");
+
+  try {
+    if (req.file) {
+      const bucketName = "images";
+      const objectName = `${Date.now()}_${uuidString}_${req.file.originalname}`;
+      await minioClient.putObject(
+        bucketName,
+        objectName,
+        req.file.buffer,
+        req.file.buffer.length
+      );
+
+      const user = new User({
+        fullname: fullname,
+        username: username,
+        phone: number,
+        profilepic: objectName,
+        desc: bio,
+        gender: gender,
+        DOB: dob,
+        interest: individualInterests,
+      });
+      await user.save();
+
+      res.status(200).json({
+        message: "Account created successfully",
+        user,
+
+        success: true,
+      });
+    } else {
+      const user = new User({
+        fullname: fullname,
+        username: username,
+        phone: number,
+        profilepic: image1,
+        desc: bio,
+        gender: gender,
+        DOB: dob,
+        interest: individualInterests,
+      });
+      await user.save();
+
+      let pic = await generatePresignedUrl(
+        "images",
+        user.profilepic.toString(),
+        60 * 60
+      );
+
+      res.status(200).json({
+        message: "Account created successfully",
+        user,
+        pic,
+        success: true,
+      });
+    }
+  } catch (e) {
+    console.log(e);
+    res.status(500).json({
+      message: "Account creation failed",
+      success: false,
+    });
+  }
+};
