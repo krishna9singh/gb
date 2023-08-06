@@ -428,9 +428,9 @@ exports.fetchmore = async (req, res) => {
     const liked = [];
     for (let i = 0; i < post.length; i++) {
       if (post[i].likedby.includes(user._id)) {
-        liked.push(post[i]._id);
+        liked.push("true");
       } else {
-        liked.push("not liked");
+        liked.push("false");
       }
     }
 
@@ -723,10 +723,12 @@ exports.getallposts = async (req, res) => {
         tc.push(totalcomments.length);
       }
       for (let i = 0; i < posts.length; i++) {
-        if (posts[i].likedby.includes(user._id)) {
-          liked.push(posts[i]._id);
+        if (
+          posts[i].likedby?.some((id) => id.toString() === user._id.toString())
+        ) {
+          liked.push(true);
         } else {
-          liked.push("not liked");
+          liked.push(false);
         }
       }
       for (let i = 0; i < posts.length; i++) {
@@ -746,8 +748,8 @@ exports.getallposts = async (req, res) => {
         dps.push(a);
       }
       res.status(203).json({
-        posts,
         liked,
+        posts,
         dps,
         content,
         comments,
@@ -782,10 +784,12 @@ exports.getallposts = async (req, res) => {
         tc.push(totalcomments.length);
       }
       for (let i = 0; i < posts.length; i++) {
-        if (posts[i].likedby.includes(user._id)) {
-          liked.push(posts[i]._id);
+        if (
+          posts[i].likedby?.some((id) => id.toString() === user._id.toString())
+        ) {
+          liked.push(true);
         } else {
-          liked.push("not liked");
+          liked.push(false);
         }
       }
       for (let i = 0; i < posts.length; i++) {
@@ -807,7 +811,7 @@ exports.getallposts = async (req, res) => {
 
       res
         .status(200)
-        .json({ posts, liked, dps, content, comments, tc, success: true });
+        .json({ liked, posts, dps, content, comments, tc, success: true });
     }
   } catch (e) {
     res.status(400).json({ message: e.message, success: false });
