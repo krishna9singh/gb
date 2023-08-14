@@ -300,19 +300,22 @@ exports.fetchfeed = async (req, res) => {
 
       let current = [];
       const memdps = [];
+
       for (let i = 0; i < post.length; i++) {
-        for (let j = 0; j < 4; j++) {
+        for (
+          let j = 0;
+          j < Math.min(4, post[i].community.members.length);
+          j++
+        ) {
           const a = await generatePresignedUrl(
             "images",
             post[i].community.members[j].profilepic.toString(),
             60 * 60
           );
-
           current.push(a);
         }
 
         memdps.push(current);
-
         current = [];
       }
 
@@ -514,7 +517,7 @@ exports.joinedcom = async (req, res) => {
         posts.push(post);
 
         for (let i = 0; i < community.length; i++) {
-          for (let j = 0; j < 4; j++) {
+          for (let j = 0; j < Math.min(4, community[i].members.length); j++) {
             const a = await generatePresignedUrl(
               "images",
               community[i].members[j].profilepic.toString(),
@@ -522,8 +525,8 @@ exports.joinedcom = async (req, res) => {
             );
             current.push(a);
           }
+
           memdps.push(current);
-          current = [];
         }
 
         if (post.length > 0) {
