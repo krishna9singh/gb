@@ -5,6 +5,8 @@ const Community = require("../models/community");
 const uuid = require("uuid").v4;
 const Minio = require("minio");
 const Post = require("../models/post");
+const Prosite = require("../models/prosite");
+const sharp = require("sharp");
 
 const minioClient = new Minio.Client({
   endPoint: "minio.grovyo.site",
@@ -262,11 +264,13 @@ exports.getprosite = async (req, res) => {
         user.prositepic.toString(),
         60 * 60 * 24
       );
+
       const dp = await generatePresignedUrl(
         "images",
         user.profilepic.toString(),
         60 * 60 * 24
       );
+
       res.status(200).json({
         url,
         fullname: user.fullname,
@@ -274,6 +278,214 @@ exports.getprosite = async (req, res) => {
         pic: dp,
         success: true,
       });
+    }
+  } catch (e) {
+    res.status(400).json({ message: e.message, success: false });
+  }
+};
+
+//create a prosite
+exports.createprosite = async (req, res) => {
+  const { userId } = req.params;
+  const { web, mobile, title, desc } = req.body;
+  const image = req.files[0];
+  const webpng = req.files[1];
+  const mobilepng = req.files[2];
+
+  try {
+    const uuidString = uuid();
+    const user = await User.findById(userId);
+    if (!user) {
+      res.status(404).json({ message: "User not found", success: false });
+    } else {
+      const bucketName = "prosites";
+      const imageName = `${Date.now()}_${uuidString}_${image.originalname}`;
+      const webimgName = `${Date.now()}_${uuidString}_${webpng.originalname}`;
+      const mobimgName = `${Date.now()}_${uuidString}_${
+        mobilepng.originalname
+      }`;
+
+      await sharp(image.buffer)
+        .jpeg({ quality: 50 })
+        .toBuffer()
+        .then(async (data) => {
+          await minioClient.putObject(bucketName, imageName, data);
+        })
+        .catch((err) => {
+          console.log(err.message, "-error");
+        });
+      await sharp(webpng.buffer)
+        .jpeg({ quality: 50 })
+        .toBuffer()
+        .then(async (data) => {
+          await minioClient.putObject(bucketName, webimgName, data);
+        })
+        .catch((err) => {
+          console.log(err.message, "-error");
+        });
+      await sharp(mobilepng.buffer)
+        .jpeg({ quality: 50 })
+        .toBuffer()
+        .then(async (data) => {
+          await minioClient.putObject(bucketName, mobimgName, data);
+        })
+        .catch((err) => {
+          console.log(err.message, "-error");
+        });
+
+      const p = new Prosite({
+        web,
+        mobile,
+        webpng: webimgName,
+        mobilepng: mobimgName,
+        title,
+        desc,
+        creator: user._id,
+        image: imageName,
+      });
+      await p.save();
+
+      res.status(200).json({ success: true });
+    }
+  } catch (e) {
+    res.status(400).json({ message: e.message, success: false });
+  }
+};
+
+//get a list of prosites
+exports.getlist = async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      res.status(404).json({ message: "User not found", success: false });
+    } else {
+      const sites = await Prosite.find();
+      const mobile = [];
+      const web = [];
+      const images = [];
+
+      for (let i = 0; i < sites.length; i++) {
+        const mobiles = await generatePresignedUrl(
+          "prosites",
+          sites[i].mobilepng.toString(),
+          60 * 60
+        );
+        mobile.push(mobiles);
+        const webs = await generatePresignedUrl(
+          "prosites",
+          sites[i].webpng.toString(),
+          60 * 60
+        );
+        web.push(webs);
+        const image = await generatePresignedUrl(
+          "prosites",
+          sites[i].image.toString(),
+          60 * 60
+        );
+        images.push(image);
+      }
+
+      res.status(200).json({ sites, web, mobile, images, success: true });
+    }
+  } catch (e) {
+    res.status(400).json({ message: e.message, success: false });
+  }
+};
+
+//get a single detailed prosite
+exports.getdetailprosite = async (req, res) => {
+  const { userId, siteId } = req.params;
+  try {
+    const user = await User.findById(userId);
+    const prosite = await Prosite.findById(siteId);
+    if (!user || !prosite) {
+      res.status(404).json({ message: "Details Not found", success: false });
+    } else {
+      const mobile = await generatePresignedUrl(
+        "images",
+        prosite.mobilepng.toString(),
+        60 * 60
+      );
+      const web = await generatePresignedUrl(
+        "images",
+        prosite.webpng.toString(),
+        60 * 60
+      );
+      const image = await generatePresignedUrl(
+        "images",
+        prosite.image.toString(),
+        60 * 60
+      );
+      res.status(200).json({ prosite, mobile, web, image, success: true });
+    }
+  } catch (e) {
+    res.status(400).json({ message: e.message, success: false });
+  }
+};
+
+//save prosite changes
+exports.saveprosite = async (req, res) => {
+  const { userId } = req.params;
+  const { web, mobile, title, desc, creator } = req.body;
+  const image = req.files[0];
+  const webpng = req.files[1];
+  const mobilepng = req.files[2];
+
+  try {
+    const uuidString = uuid();
+    const user = await User.findById(userId);
+    if (!user) {
+      res.status(404).json({ message: "User not found", success: false });
+    } else {
+      const bucketName = "prosites";
+      const imageName = `${Date.now()}_${uuidString}_${image.originalname}`;
+      const webimgName = `${Date.now()}_${uuidString}_${webpng.originalname}`;
+      const mobimgName = `${Date.now()}_${uuidString}_${
+        mobilepng.originalname
+      }`;
+
+      await sharp(image.buffer)
+        .jpeg({ quality: 50 })
+        .toBuffer()
+        .then(async (data) => {
+          await minioClient.putObject(bucketName, imageName, data);
+        })
+        .catch((err) => {
+          console.log(err.message, "-error");
+        });
+      await sharp(webpng.buffer)
+        .jpeg({ quality: 50 })
+        .toBuffer()
+        .then(async (data) => {
+          await minioClient.putObject(bucketName, webimgName, data);
+        })
+        .catch((err) => {
+          console.log(err.message, "-error");
+        });
+      await sharp(mobilepng.buffer)
+        .jpeg({ quality: 50 })
+        .toBuffer()
+        .then(async (data) => {
+          await minioClient.putObject(bucketName, mobimgName, data);
+        })
+        .catch((err) => {
+          console.log(err.message, "-error");
+        });
+
+      const p = new Prosite({
+        web,
+        mobile,
+        webpng: webimgName,
+        mobilepng: mobimgName,
+        title,
+        desc,
+        creator,
+        image: imageName,
+      });
+      await p.save();
+
+      res.status(200).json({ success: true });
     }
   } catch (e) {
     res.status(400).json({ message: e.message, success: false });

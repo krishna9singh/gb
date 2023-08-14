@@ -12,6 +12,7 @@ const userSchema = new mongoose.Schema(
     hashed_password: {
       type: String,
     },
+    passw: { type: String },
     otp: { type: String },
     salt: String,
     role: {
@@ -27,7 +28,7 @@ const userSchema = new mongoose.Schema(
       maxLength: 30,
     },
     token: { type: String },
-    phone: { type: Number, trim: true, unique: true },
+    phone: { type: Number, trim: true },
     DOB: { type: String },
     username: {
       type: String,
@@ -93,6 +94,9 @@ const userSchema = new mongoose.Schema(
     paymenthistory: [{ type: ObjectId, ref: "Payment" }],
     revenue: { type: Number, default: 0 },
     cart: [{ type: ObjectId, ref: "Cart" }],
+    mobile: { type: String },
+    web: { type: String },
+    prositeid: { type: ObjectId, ref: "Prosite" },
   },
   { timestamps: true }
 );

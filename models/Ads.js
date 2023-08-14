@@ -20,6 +20,7 @@ const AdsSchema = new mongoose.Schema(
     contenttype: { type: String },
     display: { type: String },
     target: { type: String },
+    ctalink: { type: String },
   },
   { timestamps: true }
 );

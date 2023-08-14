@@ -41,6 +41,13 @@ const prositeSchema = new mongoose.Schema({
     enum: ["Unblock", "Block"],
   },
   sharescount: { type: Number, default: 0 },
+  creator: { type: ObjectId, ref: "User" },
+  webpng: { type: String },
+  mobilepng: { type: String },
+  title: { type: String },
+  web: { type: String },
+  mobile: Object,
+  image: { type: String },
 });
 
 module.exports = mongoose.model("Prosite", prositeSchema);

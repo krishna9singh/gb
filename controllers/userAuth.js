@@ -357,7 +357,7 @@ exports.createnewaccount = async (req, res) => {
   const interestsString = interestsArray[0];
 
   const individualInterests = interestsString.split(",");
-  console.log(req.file);
+
   if (req.file) {
     try {
       const bucketName = "images";
@@ -435,5 +435,129 @@ exports.createnewaccount = async (req, res) => {
         success: false,
       });
     }
+  }
+};
+
+exports.createnewaccountemail = async (req, res) => {
+  const { fullname, gender, username, email, pass, bio, image, interest, dob } =
+    req.body;
+  const uuidString = uuid();
+
+  const interestsArray = [interest];
+  const interestsString = interestsArray[0];
+
+  const individualInterests = interestsString.split(",");
+
+  if (req.file) {
+    try {
+      const bucketName = "images";
+      const objectName = `${Date.now()}_${uuidString}_${req.file.originalname}`;
+      await sharp(req.file.buffer)
+        .jpeg({ quality: 50 })
+        .toBuffer()
+        .then(async (data) => {
+          await minioClient.putObject(bucketName, objectName, data);
+        })
+        .catch((err) => {
+          console.log(err.message, "-Sharp error");
+        });
+
+      const user = new User({
+        fullname: fullname,
+        username: username,
+        email: email,
+        passw: pass,
+        profilepic: objectName,
+        desc: bio,
+        interest: individualInterests,
+        gender: gender,
+        DOB: dob,
+      });
+      await user.save();
+      let pic = await generatePresignedUrl(
+        "images",
+        user.profilepic.toString(),
+        60 * 60
+      );
+
+      res.status(200).json({
+        message: "Account created successfully",
+        user,
+        pic,
+        success: true,
+      });
+    } catch (e) {
+      console.log(e);
+      res.status(500).json({
+        message: "Account creation failed",
+        success: false,
+      });
+    }
+  } else {
+    try {
+      const user = new User({
+        fullname: fullname,
+        username: username,
+        email: email,
+        passw: pass,
+        profilepic: image,
+        desc: bio,
+        interest: individualInterests,
+        gender: gender,
+        DOB: dob,
+      });
+      await user.save();
+
+      let pic = await generatePresignedUrl(
+        "images",
+        user.profilepic.toString(),
+        60 * 60
+      );
+
+      res.status(200).json({
+        message: "Account created successfully",
+        user,
+        pic,
+        success: true,
+      });
+    } catch (e) {
+      console.log(e);
+      res.status(500).json({
+        message: "Account creation failed",
+        success: false,
+      });
+    }
+  }
+};
+
+exports.checkemail = async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    const user = await User.findOne({ email: email, passw: password });
+    if (!user) {
+      res
+        .status(203)
+        .json({ message: "User not found", success: true, userexists: false });
+    } else {
+      let pic = await generatePresignedUrl(
+        "images",
+        user.profilepic.toString(),
+        60 * 60
+      );
+      res.status(200).json({
+        message: "Account exists",
+        user,
+        pic,
+        success: true,
+        userexists: true,
+      });
+    }
+  } catch (e) {
+    console.log(e);
+    res.status(500).json({
+      message: "Something went wrong...",
+      success: false,
+    });
   }
 };

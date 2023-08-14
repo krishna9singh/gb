@@ -301,7 +301,7 @@ exports.fetchfeed = async (req, res) => {
       let current = [];
       const memdps = [];
       for (let i = 0; i < post.length; i++) {
-        for (let j = 0; j < post[i].community.members.length; j++) {
+        for (let j = 0; j < 4; j++) {
           const a = await generatePresignedUrl(
             "images",
             post[i].community.members[j].profilepic.toString(),
@@ -514,7 +514,7 @@ exports.joinedcom = async (req, res) => {
         posts.push(post);
 
         for (let i = 0; i < community.length; i++) {
-          for (let j = 0; j < community[i].members.length; j++) {
+          for (let j = 0; j < 4; j++) {
             const a = await generatePresignedUrl(
               "images",
               community[i].members[j].profilepic.toString(),

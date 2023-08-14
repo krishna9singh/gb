@@ -134,11 +134,30 @@ exports.getad = async (req, res) => {
     if (!user) {
       res.status(404).json({ message: "No user found!", success: false });
     } else {
-      const birthDate = new Date(user.DOB);
-      const ageDiff = Date.now() - birthDate.getTime();
-      const ageDate = new Date(ageDiff);
-      const age = Math.abs(ageDate.getUTCFullYear() - 1970);
+      const birthdateString = user.DOB;
+      const [birthDay, birthMonth, birthYear] = birthdateString
+        .split("/")
+        .map(Number);
+
+      // Get the current date
+      const currentDate = new Date();
+
+      // Get the current day, month, and year
+      const currentDay = currentDate.getDate();
+      const currentMonth = currentDate.getMonth() + 1; // Month is zero-based
+      const currentYear = currentDate.getFullYear();
+
+      // Calculate the age
+      let age = currentYear - birthYear;
+      if (
+        currentMonth < birthMonth ||
+        (currentMonth === birthMonth && currentDay < birthDay)
+      ) {
+        age--; // Adjust age if birthday hasn't occurred yet this year
+      }
+
       const ads = [];
+
       const ad = await Ads.aggregate([
         {
           $match: {
