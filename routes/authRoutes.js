@@ -21,6 +21,8 @@ const {
   createnew,
   checkemail,
   createnewaccountemail,
+  getdetails,
+  postdetails,
 } = require("../controllers/userAuth");
 const { userbyId } = require("../controllers/user");
 
@@ -51,6 +53,8 @@ router.post("/interest/:userId", interests);
 router.post("/adminlogin007", adminlogin);
 router.get("/:id", gettest);
 router.post("/test", upload.any(), test);
+router.get("/getdetails/:id", getdetails);
+router.post("/postdetails/:id", postdetails);
 
 router.param("userId", userbyId);
 

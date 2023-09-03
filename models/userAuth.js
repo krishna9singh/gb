@@ -97,6 +97,9 @@ const userSchema = new mongoose.Schema(
     mobile: { type: String },
     web: { type: String },
     prositeid: { type: ObjectId, ref: "Prosite" },
+    lastlogin: { type: [String] },
+    location: { type: [String] },
+    device: { type: [String] },
   },
   { timestamps: true }
 );

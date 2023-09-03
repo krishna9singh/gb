@@ -561,3 +561,47 @@ exports.checkemail = async (req, res) => {
     });
   }
 };
+
+exports.getdetails = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const user = await User.findById(id);
+    if (!user) {
+      res.status(203).json({ message: "User not found", success: true });
+    } else {
+      let pic = await generatePresignedUrl(
+        "images",
+        user.profilepic.toString(),
+        60 * 60
+      );
+      res.status(200).json({ user, pic, success: true });
+    }
+  } catch (e) {
+    res.status(500).json({
+      message: "Something went wrong...",
+      success: false,
+    });
+  }
+};
+
+exports.postdetails = async (req, res) => {
+  const { id } = req.params;
+  const { location, device, lastlogin } = req.body;
+  try {
+    const user = await User.findById(id);
+    if (!user) {
+      res.status(203).json({ message: "User not found", success: true });
+    } else {
+      await User.updateOne(
+        { _id: id },
+        { $push: { lastlogin: lastlogin, device: device, location: location } }
+      );
+      res.status(200).json({ success: true });
+    }
+  } catch (e) {
+    res.status(500).json({
+      message: "Something went wrong...",
+      success: false,
+    });
+  }
+};
