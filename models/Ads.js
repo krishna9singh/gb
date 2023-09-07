@@ -21,6 +21,12 @@ const AdsSchema = new mongoose.Schema(
     display: { type: String },
     target: { type: String },
     ctalink: { type: String },
+    dailybudget: { type: String },
+    totalbudget: { type: String },
+    category: { type: String },
+    startdate: { type: String },
+    enddate: { type: String },
+    views: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

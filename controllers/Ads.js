@@ -43,8 +43,16 @@ exports.newad = async (req, res) => {
     target,
     ageup,
     agedown,
+    dailybudget,
+    totalbudget,
+    category,
+    startdate,
+    enddate,
+    link,
+    selectedAgeRange,
+    description,
   } = req.body;
-
+  console.log(title);
   try {
     const user = await User.findById(id);
     if (!user) {

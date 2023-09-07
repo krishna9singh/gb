@@ -90,6 +90,7 @@ exports.signupmobile = async (req, res) => {
 
   try {
     const user = await User.findOne({ phone: phone });
+
     if (user) {
       const a = await generatePresignedUrl(
         "images",
@@ -538,7 +539,7 @@ exports.checkemail = async (req, res) => {
     if (!user) {
       res
         .status(203)
-        .json({ message: "User not found", success: true, userexists: false });
+        .json({ message: "User not found", success: false, userexists: false });
     } else {
       let pic = await generatePresignedUrl(
         "images",
@@ -586,7 +587,7 @@ exports.getdetails = async (req, res) => {
 
 exports.postdetails = async (req, res) => {
   const { id } = req.params;
-  const { location, device, lastlogin } = req.body;
+  const { device, lastlogin } = req.body;
   try {
     const user = await User.findById(id);
     if (!user) {
@@ -594,11 +595,12 @@ exports.postdetails = async (req, res) => {
     } else {
       await User.updateOne(
         { _id: id },
-        { $push: { lastlogin: lastlogin, device: device, location: location } }
+        { $push: { lastlogin: lastlogin, device: device } }
       );
       res.status(200).json({ success: true });
     }
   } catch (e) {
+    console.log(e);
     res.status(500).json({
       message: "Something went wrong...",
       success: false,

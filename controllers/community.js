@@ -315,7 +315,10 @@ exports.getcommunity = async (req, res) => {
       const canedit =
         community.admins.includes(user._id) ||
         community.moderators.includes(user._id);
-
+      console.log(
+        community.admins.includes(user._id),
+        community.moderators.includes(user._id)
+      );
       const dp = await generatePresignedUrl(
         "images",
         community.dp.toString(),

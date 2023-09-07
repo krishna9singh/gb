@@ -100,6 +100,8 @@ const userSchema = new mongoose.Schema(
     lastlogin: { type: [String] },
     location: { type: [String] },
     device: { type: [String] },
+    accounttype: { type: String },
+    organization: { type: String },
   },
   { timestamps: true }
 );
