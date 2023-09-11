@@ -10,6 +10,7 @@ const minioClient = new Minio.Client({
   accessKey: "shreyansh379",
   secretKey: "shreyansh379",
 });
+const Advertiser = require("../models/Advertiser");
 
 //function to generate a presignedurl of minio
 async function generatePresignedUrl(bucketName, objectName, expiry = 604800) {
@@ -26,40 +27,136 @@ async function generatePresignedUrl(bucketName, objectName, expiry = 604800) {
   }
 }
 
+//genrate a random id
+function generateUniqueID() {
+  let advertiserID;
+  advertiserID = Math.floor(100000000 + Math.random() * 900000000);
+
+  return advertiserID.toString();
+}
+
+exports.checkaccount = async (req, res) => {
+  const { phone, email, password } = req.body;
+  try {
+    let advertiser;
+    if (email && password) {
+      advertiser = await Advertiser.findOne({ email, password });
+    } else if (phone) {
+      advertiser = await Advertiser.findOne({ phone });
+    } else {
+      return res.status(400).json({
+        message: "Invalid request. Please provide email, password, or phone.",
+        success: false,
+      });
+    }
+
+    if (advertiser) {
+      const dp = await generatePresignedUrl(
+        "images",
+        advertiser.image.toString(),
+        60 * 60
+      );
+      return res
+        .status(200)
+        .json({ message: "Advertiser exists", advertiser, dp, success: true });
+    } else {
+      return res
+        .status(404)
+        .json({ message: "Advertiser not found", success: false });
+    }
+  } catch (e) {
+    res.status(400).json({ message: "Something went wrong", success: false });
+  }
+};
+
+exports.createadvacc = async (req, res) => {
+  const {
+    firstname,
+    lastname,
+    city,
+    state,
+    landmark,
+    email,
+    phone,
+    type,
+    pincode,
+    address,
+    organizationname,
+    pan,
+    gst,
+  } = req.body;
+  try {
+    const advid = generateUniqueID();
+    const uuidString = uuid();
+    const image = req.file;
+    const bucketName = "images";
+    const objectName = `${Date.now()}_${uuidString}_${image.originalname}`;
+    console.log(req.body, req.file);
+    const adv = new Advertiser({
+      firstname,
+      lastname,
+      city,
+      state,
+      landmark,
+      email,
+      phone,
+      type,
+      pincode,
+      address,
+      advertiserid: advid,
+      image: objectName,
+      organizationname,
+      pan,
+      gst,
+    });
+
+    await sharp(image.buffer)
+      .jpeg({ quality: 60 })
+      .toBuffer()
+      .then(async (data) => {
+        await minioClient.putObject(bucketName, objectName, data);
+      })
+      .catch((err) => {
+        console.log(err.message, "-error");
+      });
+
+    await adv.save();
+    res.status(200).json({ success: true });
+  } catch (e) {
+    res.status(400).json({ message: "Something went wrong", success: false });
+  }
+};
+
 exports.newad = async (req, res) => {
   const { id } = req.params;
   const {
-    title,
-    cta,
-    age,
-    gender,
-    tags,
-    location,
-    type,
-    community,
-    budget,
-    contenttype,
-    display,
-    target,
-    ageup,
-    agedown,
-    dailybudget,
-    totalbudget,
-    category,
+    adname,
     startdate,
     enddate,
-    link,
-    selectedAgeRange,
-    description,
+    cta,
+    ctalink,
+    goal,
+    headline,
+    desc,
+    preferedsection,
+    tags,
+    location,
+    agerange,
+    maxage,
+    minage,
+    totalbudget,
+    dailybudget,
+    estaudience,
+    category,
+    contenttype,
   } = req.body;
-  console.log(title);
   try {
-    const user = await User.findById(id);
+    const user = await Advertiser.findById(id);
+    const uuidString = uuid();
     if (!user) {
       res.status(404).json({ message: "No user found!", success: false });
     } else {
       if (contenttype === "image") {
-        const uuidString = uuid();
         const image = req.files[0];
         const bucketName = "ads";
         const objectName = `${Date.now()}_${uuidString}_${image.originalname}`;
@@ -75,22 +172,26 @@ exports.newad = async (req, res) => {
           });
 
         const newAd = new Ads({
-          title: title,
-          creator: id,
-          community: community,
-          target: target,
-          cta: cta,
+          adname,
+          startdate,
+          enddate,
+          cta,
+          ctalink,
+          goal,
+          headline,
+          desc,
+          preferedsection,
+          tags,
+          location,
+          agerange,
+          maxage,
+          minage,
+          totalbudget,
+          dailybudget,
+          estaudience,
+          category,
           content: objectName,
-          age: age,
-          gender: gender,
-          tags: tags,
-          location: location,
-          budget: budget,
-          type: type,
-          contenttype: contenttype,
-          display: display,
-          ageup: ageup,
-          agedown: agedown,
+          adveriserid: id,
         });
         await newAd.save();
         res.status(200).json({ success: true });
@@ -98,7 +199,7 @@ exports.newad = async (req, res) => {
         const { originalname, buffer, mimetype } = req.files[0];
 
         const size = buffer.byteLength;
-        const bucketName = "posts";
+        const bucketName = "ads";
         const objectName = `${Date.now()}_${uuidString}_${originalname}`;
 
         await minioClient.putObject(
@@ -109,22 +210,26 @@ exports.newad = async (req, res) => {
           mimetype
         );
         const newAd = new Ads({
-          title: title,
-          creator: id,
-          community: community,
-          cta: cta,
+          adname,
+          startdate,
+          enddate,
+          cta,
+          ctalink,
+          goal,
+          headline,
+          desc,
+          preferedsection,
+          tags,
+          location,
+          agerange,
+          maxage,
+          minage,
+          totalbudget,
+          dailybudget,
+          estaudience,
+          category,
           content: objectName,
-          age: age,
-          gender: gender,
-          tags: tags,
-          location: location,
-          budget: budget,
-          type: type,
-          contenttype: contenttype,
-          post: objectName,
-          target: target,
-          ageup: ageup,
-          agedown: agedown,
+          adveriserid: id,
         });
         await newAd.save();
         res.status(200).json({ success: true });
@@ -229,10 +334,10 @@ exports.getad = async (req, res) => {
 exports.getallads = async (req, res) => {
   const { id } = req.params;
   try {
-    const user = await User.findById(id);
+    const user = await Advertiser.findById(id);
     if (user) {
       const content = [];
-      const ads = await Ads.find({ creator: user._id });
+      const ads = await Ads.find({ adveriserid: user._id });
       for (let i = 0; i < ads.length; i++) {
         const a = await generatePresignedUrl(
           "ads",
